@@ -22,9 +22,11 @@
 #include <string>
 #include <cmath>
 #include <math.h>
+#include <limits.h>
 
 using namespace std;
 
+// Global variable that stores the average degrees of the 3 graphs that we create
 vector<float> avgDegrees;
 
 // Node structure for the adjacency lists
@@ -42,6 +44,7 @@ class adjacencyList
 		struct node * head, *tail;
 		int size;
 
+		// Constructor
 		adjacencyList()
 		{
 			head = NULL;
@@ -49,6 +52,7 @@ class adjacencyList
 			size = 0;
 		}
 
+		// Pushes an element to the back of our list and increases the size
 		void push_back(int data) 
 		{
 			node *temp = new node;
@@ -69,73 +73,18 @@ class adjacencyList
 			
 			size++;
 		}
-
-		void push_front(int data)
-		{
-			node *temp = new node;
-
-			temp->vertex = data;
-
-			if (head != NULL)
-			{
-				temp->next = head;
-				head = temp;
-			}
-			else
-			{
-				head = temp;
-				head->next = NULL;
-			}
-
-			size++;
-		}
-
-		void pop() 
-		{
-			if (head != NULL) 
-			{
-				node * temp = new node;
-				temp = head;
-				head = head->next;
-				delete temp;
-				size--;
-			}
-		}
-
-		int top() 
-		{
-			if (head != NULL) 
-			{
-				return head->vertex;
-			}
-			else 
-			{
-				return -100;
-			}
-		}
-
-		bool empty() 
-		{
-			if (size > 0) 
-			{
-				return false;
-			}
-			else 
-			{
-				return true;
-			}
-		}
 };
 
 /* This class stores all of our edges and vertices, and has functions to create a degree distribution, and to figure out how many connected components there are. */
 class Graph 
 {
 	public:
-		
+		// Class fields
 		int numVertices;
 		adjacencyList *list;
 		int ** adjMatrix;
 	
+		// Constructor for the graph, initializes both the adjacency lists, and the adjacency matrix
 		Graph(int vertices)
 		{
 			// Initialize our adjacency lists
@@ -159,6 +108,7 @@ class Graph
 			}
 		}
 
+		// This function allows an edge to form in our graph structure
 		void addEdge(int u, int v) 
 		{
 			list[u].push_back(v);
@@ -166,11 +116,13 @@ class Graph
 			adjMatrix[v][u] = 1;
 		}
 
+		// Simple function to check if an edge exists in our graph
 		bool isEdge(int u, int v) 
 		{
 			return (adjMatrix[u][v] == 1);
 		}
 
+		// This gets the degree of a single index in our adjacency list table
 		int getIndexDegree(int index)
 		{
 			node *p = list[index].head;
@@ -197,6 +149,7 @@ class Graph
 			}
 		}
 
+		// This gets the max number degree of our adjacency list table
 		int getMaxChainCount()
 		{
 			int maxChainSize = 0;
@@ -215,8 +168,11 @@ class Graph
 			return maxChainSize;
 		}
 
+		// This function calls depth first search and gets info about how many connected components there are, and the sizes of each
 		int getComponentNumbers()
 		{
+			vector<string> componentSizes;
+			string output = "";
 			int count = 0;
 
 			bool * visited = new bool[numVertices];
@@ -234,13 +190,61 @@ class Graph
 				{
 					depthFirstSearch(v, visited, compCount);
 					count++;
-					cout << "Component " << to_string(count) << " size: " << to_string(compCount) << endl;
+					componentSizes.push_back("Component " + to_string(count) + " size: " + to_string(compCount));
 				}				
 			}
+
+			// All the below code does is just print the component info in 3 columns to make it easier to read
+			vector<int> columnLengths;
+			int dataLength = (int)componentSizes.size();
+
+			for (int i = 0; i < 3; i++)
+			{
+				columnLengths.push_back(dataLength / 3);
+			}
+
+			for (int i = 0; i < dataLength % 3; i++)
+			{
+				columnLengths.at(i) = columnLengths.at(i) + 1;
+			}
+
+			vector<vector<string>> columns;
+			int index = 0;
+
+			for (int i = 0; i < 3; i++)
+			{
+				vector<string> column;
+
+				for (int j = 0; j < columnLengths.at(i) && index < dataLength; j++)
+				{
+					column.push_back(componentSizes.at(index));
+					index++;
+				}
+
+				columns.push_back(column);
+			}
+
+			for (int i = 0; i < columnLengths.at(0); i++)
+			{
+				for (int j = 0; j < 3; j++)
+				{
+					vector<string> column = columns.at(j);
+
+					if (i < column.size()) 
+					{
+						output += column.at(i) + "\t";
+					}
+				}
+
+				output += "\n";
+			}
+
+			cout << output << endl;
 
 			return count;
 		}
 
+		// A recursive depth first search algorithm that counts how many times it was recursively called
 		void depthFirstSearch(int v, bool visited[], int &count)
 		{
 			visited[v] = true;
@@ -303,24 +307,19 @@ class Graph
 					for (int j = i + 1; j < 3186; j++)
 					{
 						// IMPORTANT TO CHECK THAT WE ARE NOT ADDING ANYTHING TO INT_MAX, OR IT WILL OVERFLOW INTO NEGATIVE INTS
-						if ((!(adjMatrix[i][k] == INT_MAX) && !(adjMatrix[k][j] == INT_MAX))
-							&& (!(adjMatrix[k][i] == INT_MAX) && !(adjMatrix[j][k] == INT_MAX)))
+						if ((!(adjMatrix[i][k] == INT_MAX) && !(adjMatrix[k][j] == INT_MAX)))
 						{
 							if (adjMatrix[i][j] > adjMatrix[i][k] + adjMatrix[k][j])
 							{
-								adjMatrix[i][j] = adjMatrix[i][k] + adjMatrix[k][j];
+								adjMatrix[i][j] = adjMatrix[j][i] = adjMatrix[i][k] + adjMatrix[k][j];
 							}
-
-							if (adjMatrix[j][i] > adjMatrix[k][i] + adjMatrix[j][k])
-							{
-								adjMatrix[j][i] = adjMatrix[k][i] + adjMatrix[j][k];
-							}
-						}						
+						}
 					}
 				}
 			}
 		}
 
+		// Gets the average clustering coefficient of all vertexes in the graph
 		float computeMeanClusteringCoefficient()
 		{
 			// Initializing local variables
@@ -388,6 +387,7 @@ class Graph
 			return result;
 		}
 
+		// Gets the average vertex degree of our graph, then stores it in a global veriable
 		void computeAverageVertexDegree(int maxDegree, int * degrees) 
 		{
 			float sum = 0.0f;
@@ -408,6 +408,7 @@ class Graph
 			avgDegrees.push_back(result);
 		}
 
+		// Prints the histogram of our degree distribution for our graph
 		string print() 
 		{
 			string output;
@@ -583,6 +584,7 @@ void calculateCoefficientsAndGraph(vector<float> &means, vector<vector<float>> &
 	cout << "Number of edges for graph 3: " << to_string(edges3) << endl;*/
 }
 
+/* This function gets rid of all of the land cells in our final array structure */
 void cullLandCells(vector<vector<vector<float>>> &array, vector<vector<float>> &newArray)
 {
 	for (int i = 0; i < 63; i++)
@@ -599,6 +601,7 @@ void cullLandCells(vector<vector<vector<float>>> &array, vector<vector<float>> &
 	cout << "The number of non-land cells after culling: " << newArray.size() << endl;
 }
 
+/* This function computes the clustering coefficient for a random graph */
 float computeRandomClusteringCoefficient(float degreeAvg) 
 {
 	float result = 0.0f;
@@ -608,6 +611,7 @@ float computeRandomClusteringCoefficient(float degreeAvg)
 	return result;
 }
 
+/* This function computes the characteristic path length for a random graph */
 float computeRandomCharacteristicPathLength(float degreeAvg)
 {
 	float result = 0.0f;
@@ -684,20 +688,20 @@ int main()
 	// Initialize the graphs
 	Graph graphs[3] = { Graph(3186), Graph(3186), Graph(3186) };
 
-	cout << "Calculating means of all indexes...";
+	cout << "Calculating means of all indexes...\n";
 
 	// After reading all of the files, calculate the mean for each spot in the table
 	calculateMean(means, nonLand);
 
-	cout << " Done.\nCalculating time series of all indexes...";
+	cout << "Calculating time series of all indexes...\n";
 	// After reading all of the files, calculate the Sxx value for each spot in the table
 	calculateTimeSeries(timeSeries, means, nonLand);
 
-	cout << " Done.\nCalculating coefficients of all indexes...";
+	cout << "Calculating coefficients of all indexes...\n";
 	// Now we calculate the coefficients
 	calculateCoefficientsAndGraph(means, nonLand, timeSeries, thresh, graphs);
 
-	cout << " Done.\nCreating graphs..." << endl;
+	cout << "Creating graphs...\n" << endl;
 
 	cout << endl;
 
@@ -738,14 +742,14 @@ int main()
 	cout << "-----------------------------------------------------------------" << endl;
 
 	cout << "Random Graph 1 clustering coefficient: " << to_string(computeRandomClusteringCoefficient(avgDegrees[0])) << endl;
-	cout << "Random Graph 1 clustering coefficient: " << to_string(computeRandomClusteringCoefficient(avgDegrees[1])) << endl;
-	cout << "Random Graph 1 clustering coefficient: " << to_string(computeRandomClusteringCoefficient(avgDegrees[2])) << endl;
+	cout << "Random Graph 2 clustering coefficient: " << to_string(computeRandomClusteringCoefficient(avgDegrees[1])) << endl;
+	cout << "Random Graph 3 clustering coefficient: " << to_string(computeRandomClusteringCoefficient(avgDegrees[2])) << endl;
 
 	cout << "-----------------------------------------------------------------" << endl;
 
 	cout << "Random Graph 1 characteristic path length: " << to_string(computeRandomCharacteristicPathLength(avgDegrees[0])) << endl;
-	cout << "Random Graph 1 characteristic path length: " << to_string(computeRandomCharacteristicPathLength(avgDegrees[1])) << endl;
-	cout << "Random Graph 1 characteristic path length: " << to_string(computeRandomCharacteristicPathLength(avgDegrees[2])) << endl;
+	cout << "Random Graph 2 characteristic path length: " << to_string(computeRandomCharacteristicPathLength(avgDegrees[1])) << endl;
+	cout << "Random Graph 3 characteristic path length: " << to_string(computeRandomCharacteristicPathLength(avgDegrees[2])) << endl;
 	
 	return 0;
 }
