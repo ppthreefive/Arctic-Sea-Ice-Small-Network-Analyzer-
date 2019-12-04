@@ -25,6 +25,8 @@
 
 using namespace std;
 
+vector<float> avgDegrees;
+
 // Node structure for the adjacency lists
 struct node 
 {
@@ -386,6 +388,26 @@ class Graph
 			return result;
 		}
 
+		void computeAverageVertexDegree(int maxDegree, int * degrees) 
+		{
+			float sum = 0.0f;
+			float count = 0.0f;
+			float result = 0.0f;
+
+			for (int i = 0; i < maxDegree; i++)
+			{
+				for (int j = 0; j < degrees[i]; j++)
+				{
+					sum += i;
+					count++;
+				}
+			}
+
+			result = sum / count;
+
+			avgDegrees.push_back(result);
+		}
+
 		string print() 
 		{
 			string output;
@@ -420,6 +442,8 @@ class Graph
 
 				n++;
 			}
+
+			computeAverageVertexDegree(maxChain, chains);
 
 			// Print the number of chains for the respective number of chain up to the max chain
 			for (int i = 0; i < maxChain; i++)
@@ -575,6 +599,24 @@ void cullLandCells(vector<vector<vector<float>>> &array, vector<vector<float>> &
 	cout << "The number of non-land cells after culling: " << newArray.size() << endl;
 }
 
+float computeRandomClusteringCoefficient(float degreeAvg) 
+{
+	float result = 0.0f;
+
+	result = degreeAvg / 3186.0f;
+
+	return result;
+}
+
+float computeRandomCharacteristicPathLength(float degreeAvg)
+{
+	float result = 0.0f;
+
+	result = logf(3186.0f) / logf(degreeAvg);
+
+	return result;
+}
+
 int main() 
 {
 	// Initialize a 3D array structure, in this case we are using vector for dynamic allocation
@@ -689,9 +731,21 @@ int main()
 
 	cout << "-----------------------------------------------------------------" << endl;
 
-	cout << "The Characteristic Path Length for Graph of Threshold 0.950: " << to_string(graphs[0].computeCharacteristicPathLength()) << endl;
-	cout << "The Characteristic Path Length for Graph of Threshold 0.925: " << to_string(graphs[1].computeCharacteristicPathLength()) << endl;
-	cout << "The Characteristic Path Length for Graph of Threshold 0.900: " << to_string(graphs[2].computeCharacteristicPathLength()) << endl;
+	cout << "The characteristic path length for Graph of Threshold 0.950: " << to_string(graphs[0].computeCharacteristicPathLength()) << endl;
+	cout << "The characteristic path length for Graph of Threshold 0.925: " << to_string(graphs[1].computeCharacteristicPathLength()) << endl;
+	cout << "The characteristic path length for Graph of Threshold 0.900: " << to_string(graphs[2].computeCharacteristicPathLength()) << endl;
+
+	cout << "-----------------------------------------------------------------" << endl;
+
+	cout << "Random Graph 1 clustering coefficient: " << to_string(computeRandomClusteringCoefficient(avgDegrees[0])) << endl;
+	cout << "Random Graph 1 clustering coefficient: " << to_string(computeRandomClusteringCoefficient(avgDegrees[1])) << endl;
+	cout << "Random Graph 1 clustering coefficient: " << to_string(computeRandomClusteringCoefficient(avgDegrees[2])) << endl;
+
+	cout << "-----------------------------------------------------------------" << endl;
+
+	cout << "Random Graph 1 characteristic path length: " << to_string(computeRandomCharacteristicPathLength(avgDegrees[0])) << endl;
+	cout << "Random Graph 1 characteristic path length: " << to_string(computeRandomCharacteristicPathLength(avgDegrees[1])) << endl;
+	cout << "Random Graph 1 characteristic path length: " << to_string(computeRandomCharacteristicPathLength(avgDegrees[2])) << endl;
 	
 	return 0;
 }
