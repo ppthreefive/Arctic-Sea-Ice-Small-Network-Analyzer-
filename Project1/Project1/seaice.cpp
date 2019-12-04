@@ -131,18 +131,42 @@ class Graph
 	public:
 		
 		int numVertices;
-		int time;
 		adjacencyList *list;
+		int ** adjMatrix;
 	
 		Graph(int vertices)
 		{
+			// Initialize our adjacency lists
 			numVertices = vertices;
 			list = new adjacencyList[vertices];
+
+			// Initialize our adjacency matrix as well
+			adjMatrix = new int*[vertices];
+			for (int i = 0; i < vertices; i++)
+			{
+				adjMatrix[i] = new int[numVertices];
+				adjMatrix[i][i] = 0;
+
+				for (int j = 0; j < numVertices; j++)
+				{
+					if (j != i) 
+					{
+						adjMatrix[i][j] = INT_MAX;
+					}
+				}				
+			}
 		}
 
 		void addEdge(int u, int v) 
 		{
 			list[u].push_back(v);
+			adjMatrix[u][v] = 1;
+			adjMatrix[v][u] = 1;
+		}
+
+		bool isEdge(int u, int v) 
+		{
+			return (adjMatrix[u][v] == 1);
 		}
 
 		int getIndexDegree(int index)
@@ -233,6 +257,133 @@ class Graph
 
 				p = p->next;
 			}
+		}
+
+		// Computes the characteristic path length (average path length) of a graph
+		float computeCharacteristicPathLength() 
+		{
+			float result = 0.0f;
+			float count = 0.0f;
+			float sum = 0.0f;
+
+			floydWarshall();
+
+			for (int i = 0; i < numVertices; i++)
+			{
+				for (int j = 0; j < numVertices; j++)
+				{
+					if (i != j)
+					{
+						if (adjMatrix[i][j] != INT_MAX)
+						{
+							sum += (float)adjMatrix[i][j];
+							count++;
+						}
+					}
+				}
+			}
+
+			if (count > 0) 
+			{
+				result = sum / count;
+			}
+
+			return result;
+		}
+
+		// Shortened version of Floyd-Warshall algorithm
+		void floydWarshall() 
+		{
+			for (int k = 0; k < 3186; k++)
+			{
+				for (int i = 0; i < 3186; i++) 
+				{
+					for (int j = i + 1; j < 3186; j++)
+					{
+						// IMPORTANT TO CHECK THAT WE ARE NOT ADDING ANYTHING TO INT_MAX, OR IT WILL OVERFLOW INTO NEGATIVE INTS
+						if ((!(adjMatrix[i][k] == INT_MAX) && !(adjMatrix[k][j] == INT_MAX))
+							&& (!(adjMatrix[k][i] == INT_MAX) && !(adjMatrix[j][k] == INT_MAX)))
+						{
+							if (adjMatrix[i][j] > adjMatrix[i][k] + adjMatrix[k][j])
+							{
+								adjMatrix[i][j] = adjMatrix[i][k] + adjMatrix[k][j];
+							}
+
+							if (adjMatrix[j][i] > adjMatrix[k][i] + adjMatrix[j][k])
+							{
+								adjMatrix[j][i] = adjMatrix[k][i] + adjMatrix[j][k];
+							}
+						}						
+					}
+				}
+			}
+		}
+
+		float computeMeanClusteringCoefficient()
+		{
+			// Initializing local variables
+			float sum = 0.0;
+			float result = 0.0;
+
+			for (int i = 0; i < numVertices; i++)
+			{
+				// Number of vertices in the neighborhood
+				float k = (float)list[i].size;
+
+				// Number of edges initialized, we havent counted yet
+				float e = 0.0;
+
+				// Set a pointer to the beginning of the i vertice's adjacency list
+				node * p = list[i].head;
+
+				if (k > 0)
+				{
+					// Check if the individual vertexes in vertex i's adjacency list have edges between them
+					// If they do, increment e (We are counting edges in the neighborhood of vertex i)
+					while (p != NULL)
+					{
+						int vertex = p->vertex;
+
+						node * q = list[vertex].head;
+
+						while (q != NULL)
+						{
+							node * r = list[i].head;
+							int vertexTwo = q->vertex;
+							int vertexThree = r->vertex;
+
+							while (r != NULL)
+							{
+								if (vertexTwo != vertexThree)
+								{
+									r = r->next;
+								}
+								else
+								{
+									e++;
+
+									r = r->next;
+								}
+							}
+
+							q = q->next;
+						}
+
+						p = p->next;
+					}
+
+					if (e > 0)
+					{
+						// Clustering Coefficient formula
+						sum = sum + ((2 * e) / (k * (k - 1)));
+					}
+				}
+			}
+
+			// Get the mean of clustering coefficients
+			result = (sum / (float)numVertices);
+
+			return result;
 		}
 
 		string print() 
@@ -529,6 +680,18 @@ int main()
 	cout << "Summary of Connected Components for threshold 0.900" << endl;
 	cout << "-----------------------------------------------------------------" << endl;
 	cout << "Number of connected components: " << to_string(graphs[2].getComponentNumbers()) << endl << endl;
+
+	cout << "-----------------------------------------------------------------" << endl;
+
+	cout << "The mean of clustering coefficients for Graph of Threshold 0.950: " << to_string(graphs[0].computeMeanClusteringCoefficient()) << endl;
+	cout << "The mean of clustering coefficients for Graph of Threshold 0.925: " << to_string(graphs[1].computeMeanClusteringCoefficient()) << endl;
+	cout << "The mean of clustering coefficients for Graph of Threshold 0.900: " << to_string(graphs[2].computeMeanClusteringCoefficient()) << endl;
+
+	cout << "-----------------------------------------------------------------" << endl;
+
+	cout << "The Characteristic Path Length for Graph of Threshold 0.950: " << to_string(graphs[0].computeCharacteristicPathLength()) << endl;
+	cout << "The Characteristic Path Length for Graph of Threshold 0.925: " << to_string(graphs[1].computeCharacteristicPathLength()) << endl;
+	cout << "The Characteristic Path Length for Graph of Threshold 0.900: " << to_string(graphs[2].computeCharacteristicPathLength()) << endl;
 	
 	return 0;
 }
