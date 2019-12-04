@@ -14,6 +14,8 @@
 		http://www.cplusplus.com/forum/general/833/
 		https://www.geeksforgeeks.org/connected-components-in-an-undirected-graph/
 		https://www.softwaretestinghelp.com/graph-implementation-cpp/
+		http://www.cplusplus.com/reference/thread/thread/
+		https://www.geeksforgeeks.org/multithreading-in-cpp/
 */
 
 #include <iostream>
@@ -23,6 +25,7 @@
 #include <cmath>
 #include <math.h>
 #include <limits.h>
+#include <thread>
 
 using namespace std;
 
@@ -534,11 +537,6 @@ void calculateTimeSeries(vector<float> &timeSeries, vector<float> &means, vector
 /* This function simultaneously calculates all of the pearson coefficients and builds the graphs */
 void calculateCoefficientsAndGraph(vector<float> &means, vector<vector<float>> &array, vector<float> &timeSeries, float (&thresh)[3], Graph (&graphs)[3])
 {
-	// In case we want to count how many edges we made, I initialized these.
-	int edges1 = 0;
-	int edges2 = 0;
-	int edges3 = 0;
-
 	for (int i = 0; i < 3186; i++)
 	{
 		for (int j = 0; j < 3186; j++)
@@ -557,31 +555,22 @@ void calculateCoefficientsAndGraph(vector<float> &means, vector<vector<float>> &
 
 				coef = fabs(Sxy / sqrtf((timeSeries.at(i)*timeSeries.at(j))));
 
-				//cout << "The coefficient for " << i << " and " << j << ": " << to_string(coef) << endl;
-
 				// We check where we need to place an edge. We can choose up to 3 different graphs in the same loop.
 				if (coef >= thresh[0])
 				{
 					graphs[0].addEdge(i, j);
-					edges1++;
 				}
 				if (coef >= thresh[1])
 				{
 					graphs[1].addEdge(i, j);
-					edges2++;
 				}
 				if (coef >= thresh[2])
 				{
 					graphs[2].addEdge(i, j);
-					edges3++;
 				}
 			}
 		}
 	}
-
-	/*cout << "Number of edges for graph 1: " << to_string(edges1) << endl;
-	cout << "Number of edges for graph 2: " << to_string(edges2) << endl;
-	cout << "Number of edges for graph 3: " << to_string(edges3) << endl;*/
 }
 
 /* This function gets rid of all of the land cells in our final array structure */
@@ -619,6 +608,18 @@ float computeRandomCharacteristicPathLength(float degreeAvg)
 	result = logf(3186.0f) / logf(degreeAvg);
 
 	return result;
+}
+
+/* Created a helper function for calculating the characteristic path length for multi-threading purposes */
+void computeCharacteristicPathLength(Graph &g, float thresh) 
+{
+	cout << "The characteristic path length for Graph of Threshold " << to_string(thresh) << ": " << to_string(g.computeCharacteristicPathLength()) << endl;
+}
+
+/* Created a helper function for calculating the mean of clustering coefficients for multi-threading purposes */
+void computeMeanOfClusteringCoefficients(Graph &g, float thresh) 
+{
+	cout << "The mean of clustering coefficients for Graph of Threshold " << to_string(thresh) << ": " << to_string(g.computeMeanClusteringCoefficient()) << endl;
 }
 
 int main() 
@@ -729,15 +730,25 @@ int main()
 
 	cout << "-----------------------------------------------------------------" << endl;
 
-	cout << "The mean of clustering coefficients for Graph of Threshold 0.950: " << to_string(graphs[0].computeMeanClusteringCoefficient()) << endl;
-	cout << "The mean of clustering coefficients for Graph of Threshold 0.925: " << to_string(graphs[1].computeMeanClusteringCoefficient()) << endl;
-	cout << "The mean of clustering coefficients for Graph of Threshold 0.900: " << to_string(graphs[2].computeMeanClusteringCoefficient()) << endl;
+	// These functions take forever, so we will do them all at once using multithreading
+	thread t1(computeMeanOfClusteringCoefficients, std::ref(graphs[0]), std::ref(thresh[0]));
+	thread t2(computeMeanOfClusteringCoefficients, std::ref(graphs[1]), std::ref(thresh[1]));
+	thread t3(computeMeanOfClusteringCoefficients, std::ref(graphs[2]), std::ref(thresh[2]));
+
+	t1.join();
+	t2.join();
+	t3.join();
 
 	cout << "-----------------------------------------------------------------" << endl;
 
-	cout << "The characteristic path length for Graph of Threshold 0.950: " << to_string(graphs[0].computeCharacteristicPathLength()) << endl;
-	cout << "The characteristic path length for Graph of Threshold 0.925: " << to_string(graphs[1].computeCharacteristicPathLength()) << endl;
-	cout << "The characteristic path length for Graph of Threshold 0.900: " << to_string(graphs[2].computeCharacteristicPathLength()) << endl;
+	// These functions take forever, so we will do them all at once using multithreading
+	thread t4(computeCharacteristicPathLength, std::ref(graphs[0]), std::ref(thresh[0]));
+	thread t5(computeCharacteristicPathLength, std::ref(graphs[1]), std::ref(thresh[1]));
+	thread t6(computeCharacteristicPathLength, std::ref(graphs[2]), std::ref(thresh[2]));
+
+	t4.join();
+	t5.join();
+	t6.join();
 
 	cout << "-----------------------------------------------------------------" << endl;
 
